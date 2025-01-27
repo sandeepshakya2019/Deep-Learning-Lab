@@ -2,15 +2,15 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
-batch_size = 64
+batch_size = 32
 learning_rate = 0.001
-epochs = 1
+epochs = 5
 
 # Transform and load ImageNet dataset
 transform = transforms.Compose([
@@ -22,12 +22,14 @@ transform = transforms.Compose([
 # Load dataset
 dataset = datasets.ImageFolder(root="/scratch/data/imagenet-256/versions/1", transform=transform)
 
-# Reduce dataset to 2 classes (e.g., first 2 classes)
-class_indices = [i for i, (_, label) in enumerate(dataset) if label < 2]
-dataset = torch.utils.data.Subset(dataset, class_indices)
+# Reduce dataset size to 200 samples while keeping classes same
+subset_indices = list(range(50))  # Take the first 200 samples
+dataset = Subset(dataset, subset_indices)
+
+print("dataset size",len(dataset))
 
 # Split dataset into training and testing sets
-train_size = int(0.6 * len(dataset))
+train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
@@ -106,7 +108,6 @@ def test():
             correct += predicted.eq(labels).sum().item()
 
     print(f"Test Accuracy: {100 * correct / total:.2f}%")
-
 
 # Execute training, testing, and visualization
 train()
