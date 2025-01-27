@@ -10,7 +10,7 @@
 
 ## SLURM Configuration ##
 #SBATCH --job-name=test ## Job name
-#SBATCH --ntasks=2 ## Run on a single CPU
+#SBATCH --ntasks=1 ## Run on a single CPU
 ##SBATCH --gres=gpu:a100_1g.5gb:1 ## Example GPU request
 #SBATCH --time=00:10:00 ## Time limit (hh:mm:ss)
 #SBATCH --partition=shortq ## Partition name

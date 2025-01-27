@@ -1,3 +1,4 @@
+print("check")
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,9 +9,9 @@ from torch.utils.data import DataLoader, random_split, Subset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Hyperparameters
-batch_size = 32
+batch_size = 16
 learning_rate = 0.001
-epochs = 5
+epochs = 1
 
 # Transform and load ImageNet dataset
 transform = transforms.Compose([
@@ -23,10 +24,10 @@ transform = transforms.Compose([
 dataset = datasets.ImageFolder(root="/scratch/data/imagenet-256/versions/1", transform=transform)
 
 # Reduce dataset size to 200 samples while keeping classes same
-subset_indices = list(range(50))  # Take the first 200 samples
+subset_indices = list(range(200))  # Take the first 200 samples
 dataset = Subset(dataset, subset_indices)
 
-print("dataset size",len(dataset))
+print("dataset size", len(dataset))
 
 # Split dataset into training and testing sets
 train_size = int(0.8 * len(dataset))
