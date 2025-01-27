@@ -1,8 +1,11 @@
+print("File run")
 import torch 
 import torch.nn as nn 
 import torch.optim as optim 
 from torchvision import datasets, transforms 
 from torch.utils.data import DataLoader, random_split, Subset
+import random
+
 # Device configuration 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
  
@@ -32,12 +35,23 @@ for idx, (img, label) in enumerate(full_dataset):
 
 # Create a subset of the original dataset with only the 10 classes
 subset = Subset(full_dataset, filtered_samples)
-print("Reduced dataset size:", len(subset))
+print("Full filtered dataset size:", len(subset))
+
+# Now reduce the dataset to exactly 200 samples
+subset_size = 200
+if len(subset) > subset_size:
+    subset_indices = random.sample(range(len(subset)), subset_size)  # Randomly sample 200 samples
+else:
+    subset_indices = range(len(subset))  # Use all if there are fewer than 200
+
+# Create the reduced dataset
+reduced_subset = Subset(full_dataset, subset_indices)
+print("Reduced dataset size:", len(reduced_subset))
 
 # Split dataset into training and testing sets
-train_size = int(0.8 * len(subset)) 
-test_size = len(subset) - train_size 
-train_dataset, test_dataset = random_split(subset, [train_size, test_size]) 
+train_size = int(0.8 * len(reduced_subset)) 
+test_size = len(reduced_subset) - train_size 
+train_dataset, test_dataset = random_split(reduced_subset, [train_size, test_size]) 
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True) 
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False) 
@@ -66,6 +80,7 @@ class CNN(nn.Module):
         x = self.fc(x) 
         return x 
  
+
 model = CNN().to(device) 
  
 # Loss and optimizer 
