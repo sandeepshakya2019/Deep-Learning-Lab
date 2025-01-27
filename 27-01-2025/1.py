@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn 
 import torch.optim as optim 
 from torchvision import datasets, transforms 
-from torch.utils.data import DataLoader, random_split, Subset 
- 
+from torch.utils.data import DataLoader, random_split, Subset
 # Device configuration 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
  
@@ -18,26 +17,31 @@ transform = transforms.Compose([
     transforms.ToTensor(), 
     transforms.Normalize((0.5,), (0.5,)) 
 ]) 
- 
-# Load dataset 
-dataset = datasets.ImageFolder(root="/scratch/data/imagenet-256/versions/1", transform=transform) 
- 
-print("Full dataset size", len(dataset)) 
- 
-# Reduce the dataset to 500 samples
-subset_indices = list(range(200))
-dataset = Subset(dataset, subset_indices)  # Create a subset with the first 500 samples
- 
-print("Reduced dataset size", len(dataset)) 
- 
-# Split dataset into training and testing sets 
-train_size = int(0.8 * len(dataset)) 
-test_size = len(dataset) - train_size 
-train_dataset, test_dataset = random_split(dataset, [train_size, test_size]) 
- 
+
+# Load full ImageNet dataset, restricting to 10 classes
+root_dir = "/scratch/data/imagenet-256/versions/1"  # Change this to your actual path
+full_dataset = datasets.ImageFolder(root=root_dir, transform=transform)
+
+# Select the first 10 classes from the full dataset
+class_indices = list(range(10))  # Select the first 10 classes
+filtered_samples = []
+
+for idx, (img, label) in enumerate(full_dataset):
+    if label in class_indices:
+        filtered_samples.append(idx)
+
+# Create a subset of the original dataset with only the 10 classes
+subset = Subset(full_dataset, filtered_samples)
+print("Reduced dataset size:", len(subset))
+
+# Split dataset into training and testing sets
+train_size = int(0.8 * len(subset)) 
+test_size = len(subset) - train_size 
+train_dataset, test_dataset = random_split(subset, [train_size, test_size]) 
+
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True) 
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False) 
- 
+
 # Define the neural network 
 class CNN(nn.Module): 
     def __init__(self): 
@@ -53,8 +57,8 @@ class CNN(nn.Module):
             nn.ReLU(), 
             nn.MaxPool2d(kernel_size=2, stride=2) 
         ) 
-        # Reduced the fully connected layer size to prevent excessive memory usage
-        self.fc = nn.Linear(256 * 16 * 16, 2)  # Adjusted for smaller image size 
+        # Modify the fully connected layer to output 10 classes
+        self.fc = nn.Linear(256 * 16 * 16, 10)  # 10 classes now
  
     def forward(self, x): 
         x = self.conv_layers(x) 
