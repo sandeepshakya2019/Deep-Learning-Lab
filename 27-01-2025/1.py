@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Hyperparameters 
 batch_size = 16  # Decreasing batch size to reduce memory usage
 learning_rate = 0.001 
-epochs = 5 
+epochs = 5
  
 # Transform and load ImageNet dataset 
 transform = transforms.Compose([ 
@@ -22,7 +22,13 @@ transform = transforms.Compose([
 # Load dataset 
 dataset = datasets.ImageFolder(root="/scratch/data/imagenet-256/versions/1", transform=transform) 
  
-print("dataset size", len(dataset)) 
+print("Full dataset size", len(dataset)) 
+ 
+# Reduce the dataset to 500 samples
+subset_indices = list(range(200))
+dataset = Subset(dataset, subset_indices)  # Create a subset with the first 500 samples
+ 
+print("Reduced dataset size", len(dataset)) 
  
 # Split dataset into training and testing sets 
 train_size = int(0.8 * len(dataset)) 
@@ -106,4 +112,4 @@ def test():
  
 # Execute training, testing, and visualization 
 train() 
-test() 
+test()
