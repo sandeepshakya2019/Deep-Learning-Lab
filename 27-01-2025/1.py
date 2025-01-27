@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Hyperparameters 
 batch_size = 16  # Decreasing batch size to reduce memory usage
 learning_rate = 0.001 
-epochs = 5
+epochs = 2
  
 # Transform and load ImageNet dataset 
 transform = transforms.Compose([ 
