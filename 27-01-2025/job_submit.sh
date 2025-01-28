@@ -26,7 +26,7 @@
 module load anaconda/2023.03-1
 
 ## Python Script Execution ##
-python 1.py
+python try.py
 
 ## Instructions ##
 # Submit the script using: sbatch job_submit.sh

@@ -20,6 +20,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 # Load dataset
 data_path = '/scratch/data/imagenet-256/versions/1'
 class_subset = list(range(10))  # Using first 10 classes
@@ -37,9 +38,10 @@ test_dataset.targets = [t for t in test_dataset.targets if t in class_subset]
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
+# Define CNN Model
 class CNN(nn.Module):
-    def _init_(self):
-        super(CNN, self)._init_()
+    def __init__(self):  # Correct constructor name
+        super(CNN, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, padding=1), nn.ReLU(),
             nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
@@ -61,6 +63,7 @@ class CNN(nn.Module):
         x = self.fc(x)
         return x
 
+# Initialize model, loss, and optimizer
 model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -99,28 +102,7 @@ def test():
 
     print(f'Test Accuracy: {100 * correct / total:.2f}%')
 
-# Visualize a sample
-def visualize_sample():
-    model.eval()
-    sample, label = next(iter(test_loader))
-    sample, label = sample.to(device), label.to(device)
-    output = model(sample)
-    _, predicted = torch.max(output, 1)
-
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
-    unnormalize = transforms.Normalize(
-        mean=[-m/s for m, s in zip(mean, std)],
-        std=[1/s for s in std]
-    )
-    
-    sample_img = unnormalize(sample[0].cpu())
-    plt.imshow(sample_img.permute(1, 2, 0).clamp(0, 1).numpy())
-    plt.title(f"True: {label[0].item()}, Predicted: {predicted[0].item()}")
-    plt.show()
-
 # Main execution
-if _name_ == "_main_":
+if __name__ == "__main__":
     train()
     test()
-    visualize_sample()

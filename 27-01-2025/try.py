@@ -4,6 +4,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import os
+import matplotlib.pyplot as plt
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,6 +20,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 # Load dataset
 data_path = '/scratch/data/imagenet-256/versions/1'
 class_subset = list(range(10))  # Using first 10 classes
@@ -36,33 +38,37 @@ test_dataset.targets = [t for t in test_dataset.targets if t in class_subset]
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
+# Define CNN Model
 class CNN(nn.Module):
-    def _init_(self):
-        super(CNN, self)._init_()
+    def __init__(self):  # Correct constructor name
+        super(CNN, self).__init__()
         self.conv_layers = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, padding=1), nn.ReLU(),
             nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
             nn.Conv2d(16, 32, kernel_size=3, padding=1), nn.ReLU(),
             nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
             nn.Conv2d(32, 64, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),
+            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
             nn.Conv2d(64, 128, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2), 
+            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
             nn.Conv2d(128, 256, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  
+            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
         )
-        self.fc = nn.Linear(256 * 4 * 4, 10) 
+        # Adjusted size dynamically based on input
+        self.fc = nn.Linear(256 * 4 * 4, 10)  # Adjust the size accordingly (256 * 4 * 4 after conv layers)
 
     def forward(self, x):
         x = self.conv_layers(x)
-        x = x.view(x.size(0), -1) 
+        x = x.view(x.size(0), -1)  # Flatten
         x = self.fc(x)
         return x
 
+# Initialize model, loss, and optimizer
 model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+# Training the model
 def train():
     model.train()
     for epoch in range(num_epochs):
@@ -74,12 +80,15 @@ def train():
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            
+            # Accuracy
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}, Accuracy: {100 * correct / total:.2f}%')
 
+# Testing the model
 def test():
     model.eval()
     total, correct = 0, 0
@@ -93,5 +102,7 @@ def test():
 
     print(f'Test Accuracy: {100 * correct / total:.2f}%')
 
-train()
-test()
+# Main execution
+if __name__ == "__main__":
+    train()
+    test()
