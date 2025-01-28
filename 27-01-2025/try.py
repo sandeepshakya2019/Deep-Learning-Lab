@@ -40,7 +40,7 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=Fa
 
 # Define NN1
 class NN1(nn.Module):
-    def __init__(self):  # Corrected __init__
+    def __init__(self):  # Fixed __init__
         super(NN1, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
@@ -60,7 +60,7 @@ class NN1(nn.Module):
 
 # Define NN2
 class NN2(nn.Module):
-    def __init__(self):  # Corrected __init__
+    def __init__(self):  # Fixed __init__
         super(NN2, self).__init__()
         self.nn1 = NN1()
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
@@ -83,33 +83,44 @@ class NN2(nn.Module):
         x = self.fc(x)
         return x
 
-# Model, loss, optimizer
-model = NN2().to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+# Load the pre-trained model
+def load_model():
+    model_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'  # Replace with the path to the pre-trained model
+    model = NN2()
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    print(f"Model loaded from {model_path}")
+    return model
 
-# Training the model
-def train():
+# Freeze NN1 parameters
+def freeze_nn1(model):
+    for param in model.nn1.parameters():
+        param.requires_grad = False
+    print("NN1 parameters have been frozen.")
+
+# Train the NN2 component with frozen NN1
+def train(model, train_loader, criterion, optimizer):
     model.train()
     for epoch in range(num_epochs):
-        total, correct = 0, 0
+        total_loss = 0.0
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
-            optimizer.zero_grad()
+
+            # Forward pass
             outputs = model(images)
             loss = criterion(outputs, labels)
+
+            # Backward pass and optimization
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
-            # Accuracy
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
 
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}, Accuracy: {100 * correct / total:.2f}%')
+            total_loss += loss.item()
 
-# Testing the model
-def test():
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_loader):.4f}")
+
+# Evaluate the model
+def evaluate(model, test_loader):
     model.eval()
     total, correct = 0, 0
     with torch.no_grad():
@@ -120,38 +131,24 @@ def test():
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-    print(f'Test Accuracy: {100 * correct / total:.2f}%')
-
-# Save the model
-def save_model():
-    save_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'
-    torch.save(model.state_dict(), save_path)
-    print(f"Model saved at {save_path}")
-
-# Load the model
-def load_model():
-    load_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'
-    model.load_state_dict(torch.load(load_path))
-    model.eval()
-    print(f"Model loaded from {load_path}")
-
-# Prediction
-def predict():
-    model.eval()
-    all_predictions = []
-    with torch.no_grad():
-        for images, _ in test_loader:
-            images = images.to(device)
-            outputs = model(images)
-            _, predicted = torch.max(outputs, 1)
-            all_predictions.extend(predicted.cpu().numpy())
-    return all_predictions
+    accuracy = 100 * correct / total
+    print(f"Test Accuracy: {accuracy:.2f}%")
+    return accuracy
 
 # Main execution
-if __name__ == "__main__":  # Corrected __name__
-    train()
-    test()
-    save_model()
-    load_model()
-    predictions = predict()
-    print(f"Predictions on test dataset: {predictions}")
+if __name__ == "__main__":  # Fixed __name__
+    # Load the pre-trained model
+    model = load_model()
+
+    # Freeze NN1 parameters
+    freeze_nn1(model)
+
+    # Define the loss function and optimizer for retraining NN2
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
+
+    # Retrain the model with the modified dataset
+    train(model, train_loader, criterion, optimizer)
+
+    # Evaluate the model on the test dataset
+    evaluate(model, test_loader)
