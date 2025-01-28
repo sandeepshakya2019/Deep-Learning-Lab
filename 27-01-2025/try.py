@@ -124,13 +124,13 @@ def test():
 
 # Save the model
 def save_model():
-    save_path = '/scratch/isl_78/ISL/Lab_4_3_model.pt'
+    save_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'
     torch.save(model.state_dict(), save_path)
     print(f"Model saved at {save_path}")
 
 # Load the model
 def load_model():
-    load_path = '/scratch/isl_78/ISL/Lab_4_3_model.pt'
+    load_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'
     model.load_state_dict(torch.load(load_path))
     model.eval()
     print(f"Model loaded from {load_path}")
