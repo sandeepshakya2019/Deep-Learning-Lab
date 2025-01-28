@@ -20,6 +20,7 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 # Load dataset
 data_path = '/scratch/data/imagenet-256/versions/1'
 class_subset = list(range(10))  # Using first 10 classes
@@ -37,31 +38,52 @@ test_dataset.targets = [t for t in test_dataset.targets if t in class_subset]
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-class CNN(nn.Module):
+class NN1(nn.Module):
     def _init_(self):
-        super(CNN, self)._init_()
-        self.conv_layers = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
-            nn.Conv2d(16, 32, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
-            nn.Conv2d(32, 64, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
-            nn.Conv2d(64, 128, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
-            nn.Conv2d(128, 256, kernel_size=3, padding=1), nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # Apply MaxPooling to reduce size
-        )
-        # Adjusted size dynamically based on input
-        self.fc = nn.Linear(256 * 4 * 4, 10)  # Adjust the size accordingly (256 * 4 * 4 after conv layers)
+        super(NN1, self)._init_()
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)  # 3 input channels (RGB) -> 16 output channels
+        self.relu1 = nn.ReLU()
+        self.pool1 = nn.MaxPool2d(2, 2)  # MaxPooling to reduce size
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)  # 16 input channels -> 32 output channels
+        self.relu2 = nn.ReLU()
+        self.pool2 = nn.MaxPool2d(2, 2)  # MaxPooling to reduce size
 
     def forward(self, x):
-        x = self.conv_layers(x)
-        x = x.view(x.size(0), -1)  # Flatten
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.pool1(x)  # Max pooling after first block
+        x = self.conv2(x)
+        x = self.relu2(x)
+        x = self.pool2(x)  # Max pooling after second block
+        return x
+
+
+class NN2(nn.Module):
+    def _init_(self):
+        super(NN2, self)._init_()
+        self.nn1 = NN1()  # Use NN1 as part of the model
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)  # 32 input channels -> 64 output channels
+        self.relu3 = nn.ReLU()
+        self.pool3 = nn.MaxPool2d(2, 2)  # MaxPooling to reduce size
+        self.conv4 = nn.Conv2d(64, 128, kernel_size=3, padding=1)  # 64 input channels -> 128 output channels
+        self.relu4 = nn.ReLU()
+        self.pool4 = nn.MaxPool2d(2, 2)  # MaxPooling to reduce size
+        self.fc = nn.Linear(128 * 8 * 8, 10)  # Fully connected layer (adjust size based on output of convolutions)
+
+    def forward(self, x):
+        x = self.nn1(x)  # Pass input through NN1
+        x = self.conv3(x)
+        x = self.relu3(x)
+        x = self.pool3(x)  # Max pooling after third block
+        x = self.conv4(x)
+        x = self.relu4(x)
+        x = self.pool4(x)  # Max pooling after fourth block
+        x = x.view(x.size(0), -1)  # Flatten the tensor before passing to the fully connected layer
         x = self.fc(x)
         return x
 
-model = CNN().to(device)
+
+model = NN2().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 

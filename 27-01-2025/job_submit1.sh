@@ -23,15 +23,19 @@
 
 ## Module Loading ##
 . /etc/profile.d/modules.sh
+
 module load anaconda/2023.03-1
 
+eval "$(conda shell.bash hook)"
+conda activate pytorch_gpu
+
 ## Python Script Execution ##
-python 1.py
+python try.py
 
 ## Instructions ##
 # Submit the script using: sbatch job_submit.sh
 # Note the job ID for tracking.
-# Check job status with: sacct -u 
+# Check job status with: sacct -u
 # After completion, output and error files are located in /scratch//.
 # - The output file: --.out contains the program's output.
 # - The error file: --.err contains error logs.
