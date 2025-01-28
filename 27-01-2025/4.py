@@ -85,7 +85,7 @@ class NN2(nn.Module):
 
 # Load the pre-trained model
 def load_model():
-    model_path = '/scratch/isl_77/ISL/Lab_4_3_model.pt'  # Replace with the path to the pre-trained model
+    model_path = '/scratch/isl_77/Lab_4_3_model.pt'  # Replace with the path to the pre-trained model
     model = NN2()
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
