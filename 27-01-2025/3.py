@@ -40,8 +40,8 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=Fa
 
 # Define NN1
 class NN1(nn.Module):
-    def _init_(self):
-        super(NN1, self)._init_()
+    def __init__(self):  # Corrected __init__
+        super(NN1, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(2, 2)
@@ -60,8 +60,8 @@ class NN1(nn.Module):
 
 # Define NN2
 class NN2(nn.Module):
-    def _init_(self):
-        super(NN2, self)._init_()
+    def __init__(self):  # Corrected __init__
+        super(NN2, self).__init__()
         self.nn1 = NN1()
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.relu3 = nn.ReLU()
@@ -148,7 +148,7 @@ def predict():
     return all_predictions
 
 # Main execution
-if _name_ == "_main_":
+if __name__ == "__main__":  # Corrected __name__
     train()
     test()
     save_model()

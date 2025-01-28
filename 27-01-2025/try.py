@@ -4,6 +4,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import os
+import matplotlib.pyplot as plt
 
 # Device configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -13,7 +14,7 @@ batch_size = 32
 learning_rate = 0.001
 num_epochs = 2
 
-# ImageNet transforms
+# Transformations for the dataset
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor(),
@@ -22,7 +23,7 @@ transform = transforms.Compose([
 
 # Load dataset
 data_path = '/scratch/data/imagenet-256/versions/1'
-class_subset = list(range(10))
+class_subset = list(range(10))  # Using the first 10 classes
 
 train_dataset = datasets.ImageFolder(root=data_path, transform=transform)
 test_dataset = datasets.ImageFolder(root=data_path, transform=transform)
@@ -37,9 +38,9 @@ test_dataset.targets = [t for t in test_dataset.targets if t in class_subset]
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-# NN1 Definition
+# Define NN1
 class NN1(nn.Module):
-    def __init__(self):  # Corrected constructor
+    def __init__(self):  # Corrected __init__
         super(NN1, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
         self.relu1 = nn.ReLU()
@@ -57,9 +58,9 @@ class NN1(nn.Module):
         x = self.pool2(x)
         return x
 
-# NN2 Definition
+# Define NN2
 class NN2(nn.Module):
-    def __init__(self):  # Corrected constructor
+    def __init__(self):  # Corrected __init__
         super(NN2, self).__init__()
         self.nn1 = NN1()
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
@@ -82,7 +83,7 @@ class NN2(nn.Module):
         x = self.fc(x)
         return x
 
-# Model, loss, and optimizer
+# Model, loss, optimizer
 model = NN2().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -121,7 +122,36 @@ def test():
 
     print(f'Test Accuracy: {100 * correct / total:.2f}%')
 
+# Save the model
+def save_model():
+    save_path = '/scratch/isl_78/ISL/Lab_4_3_model.pt'
+    torch.save(model.state_dict(), save_path)
+    print(f"Model saved at {save_path}")
+
+# Load the model
+def load_model():
+    load_path = '/scratch/isl_78/ISL/Lab_4_3_model.pt'
+    model.load_state_dict(torch.load(load_path))
+    model.eval()
+    print(f"Model loaded from {load_path}")
+
+# Prediction
+def predict():
+    model.eval()
+    all_predictions = []
+    with torch.no_grad():
+        for images, _ in test_loader:
+            images = images.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+            all_predictions.extend(predicted.cpu().numpy())
+    return all_predictions
+
 # Main execution
-if __name__ == "__main__":
+if __name__ == "__main__":  # Corrected __name__
     train()
     test()
+    save_model()
+    load_model()
+    predictions = predict()
+    print(f"Predictions on test dataset: {predictions}")
