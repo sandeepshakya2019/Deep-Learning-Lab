@@ -151,7 +151,7 @@ print(f"Test Summary -> Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.2f}%")
 count = 0
 for img, label in test_dataset:
     # print("Using image : ", img.shape)
-    y_pred = model(img.unsqueeze(0))
+    y_pred = model(img.unsqueeze(0)) 
     image_np = img.permute(1, 2, 0).numpy()
     title = class_names[label] + " | " +  class_names[y_pred.argmax(dim=1)]
     plt.title(title)
